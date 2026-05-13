@@ -1,91 +1,130 @@
 import React, { useEffect, useState } from 'react';
 import { Padding as RinPadding } from "@rin/ui";
 
+// 💡 这里的 mode 增加了 'right' 类型
 export function Padding({ children, className, mode = 'both' }: { children?: React.ReactNode, className?: string, mode?: 'left' | 'right' | 'both' }) {
   const [data, setData] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false); // 核心：判断是否在客户端
 
-  // 确保在客户端挂载后再渲染动态内容，完美绕过 SSR Hydration 报错
   useEffect(() => {
-    setIsClient(true);
+    // 只有左侧和右侧模式才去抓取 JSON，both 模式（中间正文）不抓取
     if (mode === 'left' || mode === 'right') {
-      fetch('https://json.btcctc.com/sidebar.json', { cache: 'no-cache' })
+      fetch('https://video.cunzhangai.com/sidebar.json', { cache: 'no-cache' })
         .then(res => res.json())
         .then(json => setData(json))
-        .catch(err => console.error("R2 Load Error:", err));
+        .catch(err => console.error("R2 Data Load Failed:", err));
     }
   }, [mode]);
 
-  // 左侧挂件
-  const renderLeft = () => {
-    // 关键修复：没有数据或 SSR 阶段，必须返回占位骨架，不能 return null
-    if (!data || !data.leftCard) {
-      return <div className="w-full h-80 bg-gray-100 rounded-[1.8rem] animate-pulse"></div>;
-    }
+  // --- 1. 处理左侧挂件模式 (完全保持你原来的代码逻辑，不改动) ---
+  if (mode === 'left') {
+    if (!data || !data.leftCard) return null;
+
+    const getIconUrl = (platform: string) => {
+      const p = platform.toLowerCase();
+      const iconName = p === 'youtube' ? 'youtube-play' : (p === 'telegram' ? 'telegram-app' : p);
+      return `https://img.icons8.com/ios-filled/50/ffffff/${iconName}.png`;
+    };
 
     return (
       <div className="flex flex-col gap-5 w-full">
         <div className="bg-white rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100">
-          <div className="bg-teal-700 p-5 text-center"> {/* 避免使用过于复杂的自定义hex颜色，改用自带类名 */}
+          <div className="bg-gradient-to-br from-[#0f766e] to-[#134e4a] p-5 text-center rounded-b-[1.8rem] overflow-hidden">
             <div className="w-14 h-14 bg-white/20 rounded-full mx-auto mb-3 border border-white/30 overflow-hidden flex items-center justify-center">
               {data.leftCard.avatar && <img src={data.leftCard.avatar} className="w-full h-full object-cover" alt="Avatar" />}
             </div>
-            <h3 className="text-white font-bold text-base">{data.leftCard.name}</h3>
-            <p className="text-teal-100 text-[10px] mt-1">{data.leftCard.title}</p>
+            <h3 className="text-white font-bold text-base leading-tight">{data.leftCard.name}</h3>
+            <p className="text-teal-100 text-[9px] mt-1 tracking-widest uppercase opacity-80">{data.leftCard.title}</p>
+
+            {data.leftCard.socials && (
+              <div className="mt-4 pt-4 border-t border-white/10 flex justify-center gap-3">
+                {Object.entries(data.leftCard.socials).map(([platform, link]: [string, any]) => {
+                  if (platform.toLowerCase() === 'bilibili') {
+                    return (
+                      <a key={platform} href={link} target="_blank" rel="noreferrer" 
+                         className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 text-white font-black text-[10px]">
+                        B
+                      </a>
+                    );
+                  }
+                  return (
+                    <a key={platform} href={link} target="_blank" rel="noreferrer" 
+                       className="w-8 h-8 bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:-translate-y-1 rounded-full ring-1 ring-white/10 shadow-sm">
+                      <img src={getIconUrl(platform)} className="w-4 h-4" alt={platform}
+                        onError={(e: any) => { e.target.src = 'https://img.icons8.com/ios-filled/50/ffffff/link.png' }}
+                      />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="p-4 bg-white text-left">
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {data.leftCard.services?.map((s: string, i: number) => (
-                <li key={i} className="text-gray-700 text-sm font-bold flex items-center">
-                   <span className="mr-2 text-teal-600">✓</span> {s}
+                <li key={i} className="flex items-center text-gray-700 text-[14px] font-bold">
+                  <span className="w-3.5 h-3.5 bg-teal-50 text-[#0f766e] rounded-full flex items-center justify-center mr-2 text-[9px]">✓</span> {s}
                 </li>
               ))}
             </ul>
           </div>
         </div>
+        {data.ad && (
+          <a href={data.ad.link} target="_blank" rel="noreferrer" className="block w-full rounded-[1.8rem] overflow-hidden shadow-sm border border-gray-100 bg-white group transition-all">
+            <div className="relative overflow-hidden bg-gray-50 rounded-b-[1.8rem]">
+              <img src={data.ad.imageUrl} className="w-full h-auto block group-hover:scale-105 transition-transform duration-500" alt="Ads" />
+            </div>
+            <div className="p-3.5 border-t border-gray-50 bg-white">
+              <h4 className="text-gray-800 font-bold text-[15px] truncate mb-1">{data.ad.title}</h4>
+              <div className="flex items-center justify-between">
+                <span className="text-[#0f766e] text-[12px] font-bold bg-teal-50 px-1.5 py-0.5 rounded-md">{data.ad.subtitle}</span>
+                <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors text-xs">→</span>
+              </div>
+            </div>
+          </a>
+        )}
+        {data.selection && (
+          <div className="bg-white rounded-[1.8rem] p-4 border border-gray-100 shadow-sm text-left">
+            <h4 className="text-[11px] font-black text-gray-400 mb-3 tracking-widest uppercase flex items-center px-1">
+              <span className="w-1 h-1 bg-[#0f766e] mr-2 rounded-full"></span> 实用工具
+            </h4>
+            <nav className="flex flex-col gap-0.5">
+              {data.selection.map((item: any, i: number) => (
+                <a key={i} href={item.link} target="_blank" rel="noreferrer" className="flex items-center py-2 px-2 rounded-xl hover:bg-teal-50 text-gray-700 font-bold text-[14px] transition-all">
+                  <span className="text-base">{item.emoji}</span> 
+                  <span className="ml-3 flex-1 truncate">{item.text}</span>
+                </a>
+              ))}
+            </nav>
+          </div>
+        )}
       </div>
     );
-  };
+  }
 
-  // 右侧挂件
-  const renderRight = () => {
-    if (!data || !data.latestPosts) {
-      return <div className="w-full h-64 bg-gray-100 rounded-[1.8rem] animate-pulse"></div>;
-    }
+  // --- 💡 2. 增加：右侧推荐阅读渲染 (手动文字链模式) ---
+  if (mode === 'right') {
+    if (!data || !data.latestPosts) return null;
     return (
       <div className="flex flex-col gap-5 w-full text-left">
         <div className="bg-white rounded-[1.8rem] p-6 shadow-sm border border-gray-100">
-          <h4 className="font-bold text-gray-800 text-base mb-4 border-b pb-2">🔥 推荐阅读</h4>
-          <nav className="flex flex-col space-y-3">
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+            <span className="text-lg">🔥</span>
+            <h4 className="font-bold text-gray-800 text-[15px]">推荐阅读</h4>
+          </div>
+          <nav className="flex flex-col">
             {data.latestPosts.map((post: any, i: number) => (
-              <a key={i} href={post.url} className="text-sm text-gray-600 hover:text-teal-700 transition-colors">
-                # {post.title}
+              <a key={i} href={post.url} className="py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 group transition-all">
+                <span className="text-gray-300 group-hover:text-[#0f766e] transition-colors mt-0.5">#</span>
+                <span className="text-[14px] font-medium text-gray-600 group-hover:text-[#0f766e] group-hover:translate-x-1 transition-all duration-300 line-clamp-1">
+                  {post.title}
+                </span>
               </a>
             ))}
           </nav>
         </div>
       </div>
     );
-  };
-
-  // 如果仅仅是包裹子元素，直接返回原始行为
-  if (mode === 'both') {
-    return <RinPadding className={className}>{children}</RinPadding>;
   }
 
-  // 最终渲染逻辑
-  return (
-    <div className={`w-full ${className || ''}`}>
-      {!isClient ? (
-        // SSR 服务端渲染时，直接输出骨架屏
-        <div className="w-full h-64 bg-gray-50 rounded-[1.8rem] animate-pulse"></div>
-      ) : (
-        // 客户端拿到数据后渲染
-        <>
-          {mode === 'left' && renderLeft()}
-          {mode === 'right' && renderRight()}
-        </>
-      )}
-    </div>
-  );
+  return <RinPadding className={className}>{children}</RinPadding>;
 }
