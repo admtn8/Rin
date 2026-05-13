@@ -190,7 +190,7 @@ function AppRoute({
             <div className="relative">
               
               {/* 左侧精致挂件区：全站显示 */}
-              <aside className="hidden 2xl:block absolute w-[240px] z-10" 
+              <aside className="hidden xl:block absolute w-[240px] z-10" 
                      style={{ 
                        top: '170px', 
                        left: 'calc(50% - 750px)' 
