@@ -8,7 +8,7 @@ export function Padding({ children, className, mode = 'both' }: { children?: Rea
   useEffect(() => {
     // 只有左侧和右侧模式才去抓取 JSON，both 模式（中间正文）不抓取
     if (mode === 'left' || mode === 'right') {
-      fetch('https://video.cunzhangai.com/sidebar.json', { cache: 'no-cache' })
+      fetch('https://json.btcctc.com/sidebar.json', { cache: 'no-cache' })
         .then(res => res.json())
         .then(json => setData(json))
         .catch(err => console.error("R2 Data Load Failed:", err));
